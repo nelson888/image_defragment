@@ -13,10 +13,21 @@
 using namespace std;
 using namespace cv;
 
+double thresh = 100;
 
-
-void processFragment(Mat* imageIn, Mat* imageOut, Mat* fragment) {
+void processFragment(Mat imageIn, Mat imageOut, Mat fragment) {
 		//TODO
+		// finding contours
+		Mat canny_output;
+		vector<vector<Point> > contours;
+		vector<Vec4i> hierarchy;
+		
+		// Detect edges using canny
+		Canny( imageIn, canny_output, thresh, thresh*2, 3 );
+		// Find contours
+		findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+
+		std::cout << contours.size() << endl;
 }
 
 
@@ -26,7 +37,7 @@ int main(int argc, char** argv){
 
 	Mat imageIn = imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
 	
-	int nbFragments = 328; // TODO parse from command line argument
+	int nbFragments = 1; // TODO parse from command line argument
 	
 	if(! imageIn.data )                              // Check for invalid input
     	{
@@ -40,7 +51,7 @@ int main(int argc, char** argv){
 		std::string fileName = "./frag_eroded/frag_eroded_" + std::to_string(i) + ".png";
 		Mat fragmentImg = imread(fileName , CV_LOAD_IMAGE_GRAYSCALE );
 		std::cout << "Processing " << fileName << std::endl;
-		processFragment(&imageIn, &imageOut, &fragmentImg);
+		processFragment(imageIn, imageOut, fragmentImg);
 	}
 	
 	imshow( "Display window", imageOut );             
