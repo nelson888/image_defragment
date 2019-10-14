@@ -1,6 +1,8 @@
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 /** objectifs: 2 binaires:
@@ -36,7 +38,17 @@ int main(int argc, char** argv){
   // TODO read the fragments.txt and for each line, extract the id, posX, posY, angle
   //                                                then read the image 'frag_eroded/frag_eroded_{id}.png'
   //                                                then call putFragment putFragment(&imageIn, &imageOut, posX, posY, angle)
- 
+  
+	ifstream infile("fragments.txt");
+	string line;
+	while (getline(infile, line){
+		istringstream iss(line);
+		int id, posX, posY;
+		float angle;
+		if( !(iss >> id >> posX >> posY >> angle)){break;}
+		Mat fragment = imread("frag_eroded/frag_eroded_"+id+".png");
+		putFragment(&fragment, &imageOut, posX, posY, angle);
+	}
 	
 	imshow( "Display window", imageOut );             
 	waitKey(0);       	
