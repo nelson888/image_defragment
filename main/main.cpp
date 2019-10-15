@@ -39,7 +39,7 @@ int main(int argc, char** argv){
 	Mat bigImageOut(imageIn.rows + BIG_AUGMENTATION, imageIn.cols + BIG_AUGMENTATION, 0);
 
   // reads fragments.txt
-	ifstream infile("fragments.txt");
+	ifstream infile("../fragments.txt");
 	string line;
 	while (getline(infile, line)) {
 		istringstream iss(line);
@@ -49,7 +49,7 @@ int main(int argc, char** argv){
 		  std::cout << "Error while parsing line: '" << line << "'" << endl;
 		  continue; 
 		}
-		Mat fragment = imread("./frag_eroded/frag_eroded_"+ to_string(id) +".png", LOADING_TYPE);
+		Mat fragment = imread("../frag_eroded/frag_eroded_"+ to_string(id) +".png", LOADING_TYPE);
 		putFragment(&bigImageOut, &fragment, posX, posY, angle);
 	}
 
