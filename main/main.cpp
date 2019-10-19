@@ -8,21 +8,21 @@
 using namespace std;
 using namespace cv;
 
-const int LOADING_TYPE = CV_LOAD_IMAGE_GRAYSCALE;
+const int LOADING_TYPE = CV_LOAD_IMAGE_UNCHANGED;
 const int BIG_AUGMENTATION = 500;
 
 
-Mat rotatedFragment(Mat* fragment, Point2f center, float angle) {
+Mat rotatedFragment(Mat fragment, Point2f center, float angle) {
   Mat rotationMatrix = getRotationMatrix2D(center, angle, 1.0);
 	Mat result;
-	warpAffine((*fragment), result, rotationMatrix, fragment->size());
+	warpAffine(fragment, result, rotationMatrix, fragment.size());
 	return result;
 }
 
-void putFragment(Mat* imageOut, Mat* fragment, int x, int y, float angle) {
-  Rect area(x + BIG_AUGMENTATION / 2.0f, y + BIG_AUGMENTATION / 2.0f, fragment->cols, fragment->rows);
-  Point2f rotationCenter(fragment->cols / 2.0f, fragment->rows / 2.0f);
-  rotatedFragment(fragment, rotationCenter, angle).copyTo((*imageOut)(area));
+void putFragment(Mat imageOut, Mat fragment, int x, int y, float angle) {
+  Rect area(x + BIG_AUGMENTATION / 2.0f, y + BIG_AUGMENTATION / 2.0f, fragment.cols, fragment.rows);
+  Point2f rotationCenter(fragment.cols / 2.0f, fragment.rows / 2.0f);
+  rotatedFragment(fragment, rotationCenter, angle).copyTo(imageOut(area));
 }
 
 /**
@@ -36,7 +36,9 @@ int main(int argc, char** argv){
   }
 
 	// create empty image bigger than the original (to avoid problems when writting rotated images)
-	Mat bigImageOut(imageIn.rows + BIG_AUGMENTATION, imageIn.cols + BIG_AUGMENTATION, 0);
+	Mat bigImageOut(imageIn.rows + BIG_AUGMENTATION, imageIn.cols + BIG_AUGMENTATION, CV_8UC4);
+  bigImageOut = Scalar(255, 255, 255, 0);
+
 
   // reads fragments.txt
 	ifstream infile("../fragments.txt");
@@ -49,8 +51,8 @@ int main(int argc, char** argv){
 		  std::cout << "Error while parsing line: '" << line << "'" << endl;
 		  continue; 
 		}
-		Mat fragment = imread("../frag_eroded/frag_eroded_"+ to_string(id) +".png", LOADING_TYPE);
-		putFragment(&bigImageOut, &fragment, posX, posY, angle);
+		Mat fragment = imread("../frag_eroded/frag_eroded_"+ to_string(id) +".png", IMREAD_UNCHANGED);
+		putFragment(bigImageOut, fragment, posX, posY, angle);
 	}
 
   // Crop the big image to have the correct size (Region Of Interest)
