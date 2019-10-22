@@ -22,12 +22,16 @@ Mat rotatedFragment(Mat fragment, Point2f center, float angle) {
 void putFragment(Mat imageOut, Mat fragment, int x, int y, float angle) {
   Point2f rotationCenter(fragment.cols * 0.5f, fragment.rows * 0.5f);
   fragment = rotatedFragment(fragment, rotationCenter, angle);
-  Rect area(x + BIG_AUGMENTATION * 0.5f, y + BIG_AUGMENTATION * 0.5f, fragment.cols, fragment.rows);
-  fragment.copyTo(imageOut(area));
+  Rect area(x - fragment.cols / 2 + BIG_AUGMENTATION * 0.5f, y - fragment.rows / 2 + BIG_AUGMENTATION * 0.5f, fragment.cols, fragment.rows);
+  vector<Mat> channels;
+  split(fragment, channels);
+                                 // we pass the alpha channel as mask because we only copy visible elements (0 means no visibility)
+  fragment.copyTo(imageOut(area), channels[3]);
 }
 
 /**
-* Image should be passed as an argument
+* Image should be passed as first argument
+* (optional) second argument should be 's' if you want to save the image instead of displaying it
 **/
 int main(int argc, char** argv){
 	Mat imageIn = imread( argv[1], LOADING_TYPE );
@@ -59,9 +63,13 @@ int main(int argc, char** argv){
   // Crop the big image to have the correct size (Region Of Interest)
   Rect regionOfInterest(BIG_AUGMENTATION * 0.5f, BIG_AUGMENTATION * 0.5f, imageIn.cols, imageIn.rows);
   Mat imageOut = bigImageOut(regionOfInterest);
-	//imshow( "Display window", imageOut);   imshow can't handle alpha of fragments
-	imwrite("./result.png", imageOut);          
-	waitKey(0);       	
+	if (argc > 2 && argv[2][0] == 's') {
+	  imwrite("./result.png", imageOut);
+	  cout << "Saved image to result.png" << endl;
+	} else {
+	  imshow( "Display window", imageOut);
+	  waitKey(0); 
+	}	
 	return 0;
 }
 
