@@ -20,7 +20,7 @@ Mat rotatedFragment(Mat fragment, Point2f center, float angle) {
 }
 
 void putFragment(Mat imageOut, Mat fragment, int x, int y, float angle) {
-  Point2f rotationCenter(fragment.cols * 0.5f, fragment.rows * 0.5f);
+  Point2f rotationCenter(fragment.cols / 2, fragment.rows / 2);
   fragment = rotatedFragment(fragment, rotationCenter, angle);
   Rect area(x - fragment.cols / 2 + BIG_AUGMENTATION * 0.5f, y - fragment.rows / 2 + BIG_AUGMENTATION * 0.5f, fragment.cols, fragment.rows);
   vector<Mat> channels;
