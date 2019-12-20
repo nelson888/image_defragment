@@ -55,21 +55,6 @@ void applySobel(Mat* source, Mat* dest){
     int cannyThreshold = 30;
     Canny(grad_X, grad_Y, edges, std::max(1, cannyThreshold / 2), cannyThreshold, false);
     edges.convertTo(*dest, CV_8U);
-    
-    /*
-    cout << "Je passe juste avant le constructeur de la matrice" << endl;
-    Mat combination(grad_X.rows,grad_Y.cols, CV_32S);
-    for(int i = 0; i < combination.rows; i++){
-        cout << "Je suis passé par " << i << " lignes" << endl;
-        for (int j = 0; j < combination.cols; j++){
-            cout << "Je suis passé par " << j << " colonnes dans la ligne "<< i << endl;
-            Point pixel(i,j);
-            combination.at<int>(pixel) = sqrt( (grad_X.at<int>(pixel)*grad_X.at<int>(pixel)) + (grad_Y.at<int>(pixel)*grad_Y.at<int>(pixel)) );
-        }
-    }
-
-    combination.convertTo(*dest, CV_8U);
-     */
 }
 
 double distance(int i1, int j1, int i2, int j2) {
@@ -78,15 +63,16 @@ double distance(int i1, int j1, int i2, int j2) {
   return sqrt(i * i + j * j); 
 }
 
-constexpr int ACC_SIZE = 100;
-constexpr int MAX_RADIUS = 100;
 
+constexpr int MAX_RADIUS = 100;
 constexpr int BORDER_THRESHOLD = 250; // color threshold
 
 
+// local maximum 
 void addMaximum(vector<vector<vector<uint>>> *acc, vector<Circle> *maximums, int i, int j, int k, int rows, int cols, int nbRads) {
   int value = (*acc)[i][j][k];
   
+  // the neighbours are beetween [(i - 1; i + 1)][(j - 1; j + 1)][(k - 1; k + 1)]
   for(int r = i - 1; r <= i + 1 && r < rows; r++) {
     if (r < 0) continue;
     for(int c = j - 1; c <= j + 1 && c < cols; c++) {
@@ -127,9 +113,7 @@ void computeCircles(Mat* img, Mat* dest, int N) {
         for(int j=0; j < rows; j++) {
           for (int i=0; i < cols; i++) {
             double d = distance(i, j, y, x);
-            if (d > nbRads)
-            std::cout << "Distance =: " << d << std::endl;
-            acc[j][i][(int)(distance(i, j, y, x))]++;
+            acc[j][i][(int)(d)]+= img->at<uchar>(y,x); // magnitude
           }
         }
       }
@@ -192,7 +176,7 @@ int main(int argc, char const *argv[])
         applySobel(&imageIN, &imageProcessing);
         computeCircles(&imageProcessing, &imageColored, stoi(argv[3]));
         cout << "Computation took " << getSeconds(getTickCount(), startTickCounts) << "s" << endl;
-        imshow("My blurred image",imageColored);
+        imshow("Cercle detection image",imageColored);
         waitKey(0);
     }
     else{
