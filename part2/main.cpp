@@ -165,11 +165,15 @@ void computeCircles(Mat* img, Mat* dest, int N) {
 }
 
 
+double getSeconds(int64 endTicks, int64 startTicks) {
+ return (endTicks - startTicks) / getTickFrequency();
+}
 
 
 int main(int argc, char const *argv[])
 {
     if (argc == 4) {
+        int64 startTickCounts = getTickCount();
         string imageName(argv[1]);
         Mat imageIN = imread(imageName, IMREAD_GRAYSCALE);
         Mat imageColored = imread(imageName, IMREAD_COLOR);
@@ -187,8 +191,7 @@ int main(int argc, char const *argv[])
         }
         applySobel(&imageIN, &imageProcessing);
         computeCircles(&imageProcessing, &imageColored, stoi(argv[3]));
-        
-        
+        cout << "Computation took " << getSeconds(getTickCount(), startTickCounts) << "s" << endl;
         imshow("My blurred image",imageColored);
         waitKey(0);
     }
