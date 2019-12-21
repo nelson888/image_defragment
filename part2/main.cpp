@@ -164,14 +164,11 @@ int main(int argc, char const *argv[])
         Mat imageProcessing(imageIN.rows, imageIN.cols, CV_8U);
         imageIN.copyTo(imageProcessing(Rect(0, 0, imageIN.cols, imageIN.rows)));
     
-            Mat grad_X, grad_Y;
-            Sobel( imageIN, grad_X, CV_16S, 1, 0, 3, 1, 0, BORDER_DEFAULT );
         if (*argv[2] == 'y'){
             Size kernelSize(0,0);
             double g_sigmaX;
             getGaussianBlurParameters(&kernelSize, &g_sigmaX);
             GaussianBlur(imageIN, imageProcessing, kernelSize, g_sigmaX);
-            
         }
         applySobel(&imageIN, &imageProcessing);
         computeCircles(&imageProcessing, &imageColored, stoi(argv[3]));
