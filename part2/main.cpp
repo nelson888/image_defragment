@@ -43,18 +43,27 @@ void getGaussianBlurParameters(Size* kSize, double* g_SigmaX){
     *g_SigmaX = getDoubleInput();
 }
 
-void applySobel(Mat* source, Mat* dest){
-    cout << "Application du filtrage Sobel" << endl;
+Mat applyGaussianFilter(Mat imageInput, Size kSize, double g_sigmaX){
+    Mat imageBlurred;
+    GaussianBlur(imageInput, imageBlurred, kSize, g_sigmaX);
+    return imageBlurred;
+}
+
+Mat applySobel(Mat source){
+    cout << "Applying Sobel" << endl;
+
+    Mat srcGray;
+    cvtColor(source, srcGray, CV_BGR2GRAY);
+
     Mat grad_X, grad_Y;
-    cout << "Sobel pour X" << endl;
-    Sobel(*source, grad_X, CV_16S, 1, 0);
-    cout << "Sobel pour Y" << endl;
-    Sobel(*source, grad_Y, CV_16S, 0, 1);
+    Sobel(srcGray, grad_X, CV_16S, 1, 0);
+    Sobel(srcGray, grad_Y, CV_16S, 0, 1);
     Mat edges;
     
-    int cannyThreshold = 30;
-    Canny(grad_X, grad_Y, edges, std::max(1, cannyThreshold / 2), cannyThreshold, false);
-    edges.convertTo(*dest, CV_8U);
+    int cannyThreshold = 100;
+    Canny(grad_X, grad_Y, edges, cannyThreshold, cannyThreshold*3, false);
+    edges.convertTo(edges,CV_8U);
+    return edges;
 }
 
 double distance(int i1, int j1, int i2, int j2) {
@@ -95,7 +104,6 @@ void computeCircles(Mat* img, Mat* dest, int N) {
   int nbRads = 2 * std::min(rows, cols);
   vector<vector<vector<uint>>> acc (rows, vector<vector<uint>>(cols, vector<uint>(nbRads, 0)));
 
-
   for (int i=0; i<rows; i++) {
     for (int j=0; j<cols; j++) {
       for (int k=0; k<nbRads; k++) {
@@ -103,9 +111,7 @@ void computeCircles(Mat* img, Mat* dest, int N) {
       }
     }
   }
-  
-  
-  
+
   // compute circles
   for(int y = 0; y < img->rows; y++){
     for (int x = 0; x < img->cols; x++){
@@ -131,11 +137,12 @@ void computeCircles(Mat* img, Mat* dest, int N) {
     }
   }
   
-  std::cout << "Getting " << N << "  maximums" << std::endl;
+  std::cout << "Getting " << N << " maximums" << std::endl;
   std::sort(maximums.begin(), maximums.end(), [&acc](Circle a, Circle b) {
             return (acc[a.r][a.c][a.rad] < acc[b.r][b.c][b.rad]);
         });
   
+
   
   vector<Circle> circles = {};
   for(int i = maximums.size() - N; i < maximums.size(); i++) {  
@@ -156,28 +163,43 @@ double getSeconds(int64 endTicks, int64 startTicks) {
 
 int main(int argc, char const *argv[])
 {
-    if (argc == 4) {
-        int64 startTickCounts = getTickCount();
-        string imageName(argv[1]);
-        Mat imageIN = imread(imageName, IMREAD_GRAYSCALE);
-        Mat imageColored = imread(imageName, IMREAD_COLOR);
-        Mat imageProcessing(imageIN.rows, imageIN.cols, CV_8U);
-        imageIN.copyTo(imageProcessing(Rect(0, 0, imageIN.cols, imageIN.rows)));
+    if (argc != 4)
+    {        
+        cout << "Syntax is : ./detectionCercle [image] [gaussian blur: y/n] [N] (with N the number of circles to detect)" << endl;
+        return 1;
+    }
+    string imageName(argv[1]);
+    Mat imageGray = imread(imageName, IMREAD_GRAYSCALE);
+    Mat imageColored = imread(imageName, IMREAD_COLOR);
     
-        if (*argv[2] == 'y'){
-            Size kernelSize(0,0);
-            double g_sigmaX;
-            getGaussianBlurParameters(&kernelSize, &g_sigmaX);
-            GaussianBlur(imageIN, imageProcessing, kernelSize, g_sigmaX);
-        }
-        applySobel(&imageIN, &imageProcessing);
-        computeCircles(&imageProcessing, &imageColored, stoi(argv[3]));
-        cout << "Computation took " << getSeconds(getTickCount(), startTickCounts) << "s" << endl;
-        imshow("Cercle detection image",imageColored);
-        waitKey(0);
+    Mat imageGaussianBlur;
+    Mat imageToProcess;
+    Mat imageBorders;
+    
+    if (*argv[2] == 'y'){
+        Size kernelSize(0,0);
+        double g_sigmaX;
+        getGaussianBlurParameters(&kernelSize, &g_sigmaX);
+        imageGaussianBlur = applyGaussianFilter(imageColored, kernelSize, g_sigmaX);
+        imageGaussianBlur.copyTo(imageToProcess);
     }
     else{
-        cout << "Syntax is : ./detectionCercle [image] [gaussian blur: y/n] [N] (with N the number of circles to detect)" << endl;
+        imageColored.copyTo(imageToProcess);
     }
+
+    int64 startTickCounts = getTickCount();
+
+    imageBorders = applySobel(imageToProcess);
+
+    computeCircles(&imageBorders, &imageColored, stoi(argv[3]));
+    cout << "Computation took " << getSeconds(getTickCount(), startTickCounts) << "s" << endl;
+
+    if(*argv[2] == 'y')
+        imshow("Blurred image",imageGaussianBlur);
+    imshow("Borders",imageBorders);
+    imshow("Cercle detection image",imageColored);
+    
+    waitKey(0);
+
     return 0;
 }
