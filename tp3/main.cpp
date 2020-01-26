@@ -8,36 +8,21 @@ using namespace cv;
 const int LOADING_TYPE = CV_LOAD_IMAGE_UNCHANGED;
 
 void getKeyPoints(Mat image, Mat fragment,
-        std::vector<KeyPoint>* keypoints_object, std::vector<KeyPoint>* keypoints_scene) {
-    
-}
-int main(int argc, char** argv)
-{
-
-    Mat image = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
-    Mat fragment = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
-
-
-    if (!fragment.data || !image.data)
-    {
-        std::cout << " --(!) Error reading images " << std::endl; return -1;
-    }
-
+        std::vector<KeyPoint>* keypoints_object, std::vector<KeyPoint>* keypoints_scene,
+                  std::vector< DMatch>* good_matches) {
     //-- Step 1: Detect the keypoints using SURF Detector
     Ptr<FeatureDetector> detector = ORB::create();
 
-    std::vector<KeyPoint> keypoints_object, keypoints_scene;
-
-    detector->detect(fragment, keypoints_object);
-    detector->detect(image, keypoints_scene);
+    detector->detect(fragment, *keypoints_object);
+    detector->detect(image, *keypoints_scene);
 
     //-- Step 2: Calculate descriptors (feature vectors)
     Ptr<DescriptorExtractor> extractor = ORB::create();
 
     Mat descriptors_object, descriptors_scene;
 
-    extractor->compute(fragment, keypoints_object, descriptors_object);
-    extractor->compute(image, keypoints_scene, descriptors_scene);
+    extractor->compute(fragment, *keypoints_object, descriptors_object);
+    extractor->compute(image, *keypoints_scene, descriptors_scene);
 
     //-- Step 3: Matching descriptor vectors using FLANN matcher
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
@@ -58,15 +43,34 @@ int main(int argc, char** argv)
     printf("-- Min dist : %f \n", min_dist);
 
     //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
-    std::vector< DMatch > good_matches;
+
 
     for (int i = 0; i < descriptors_object.rows; i++)
     {
         if (matches[i].distance < 3 * min_dist)
         {
-            good_matches.push_back(matches[i]);
+            good_matches->push_back(matches[i]);
         }
     }
+}
+int main(int argc, char** argv)
+{
+
+    Mat image = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+    Mat fragment = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
+
+
+    if (!fragment.data || !image.data)
+    {
+        std::cout << " --(!) Error reading images " << std::endl; return -1;
+    }
+
+    std::vector<KeyPoint> keypoints_object;
+    std::vector<KeyPoint> keypoints_scene;
+    std::vector< DMatch> good_matches;
+
+    getKeyPoints(image, fragment, &keypoints_object, &keypoints_scene,
+                 &good_matches);
 
     Mat img_matches;
 
