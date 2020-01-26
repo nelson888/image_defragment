@@ -1,8 +1,6 @@
 #include <iostream>
 #include "opencv2/opencv.hpp"
 
-
-
 using namespace cv;
 
 const int LOADING_TYPE = CV_LOAD_IMAGE_UNCHANGED;
@@ -45,12 +43,18 @@ void getKeyPoints(Mat image, Mat fragment, std::vector<KeyPoint>* keypoints_imag
     //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
 
 
-    for (int i = 0; i < descriptors_object.rows; i++)
-    {
-        if (matches[i].distance < 3 * min_dist)
-        {
+    for (int i = 0; i < descriptors_object.rows; i++) {
+        if (matches[i].distance < 3 * min_dist) {
             good_matches->push_back(matches[i]);
         }
+    }
+
+    std::cout << "Found " << good_matches->size() << " good matches" << std::endl;
+    for (auto match: *good_matches) {
+        std::cout << "Found match with distance: " << match.distance
+        << " from " << (*keypoints_image)[match.queryIdx].pt << "to "
+        << (*keypoints_fragments)[match.queryIdx].pt
+        << " with an angle of " << (*keypoints_fragments)[match.queryIdx].angle << std::endl;
     }
 }
 int main(int argc, char** argv)
@@ -93,7 +97,7 @@ int main(int argc, char** argv)
     try {
       H = findHomography(obj, scene, CV_RANSAC);
     } catch (const std::exception& e) {
-      
+      std::cout << "Error while finding homography" << std::endl;
     } 
 
     //-- Get the corners from the image_1 ( the object to be "detected" )
