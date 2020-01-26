@@ -7,22 +7,22 @@ using namespace cv;
 
 const int LOADING_TYPE = CV_LOAD_IMAGE_UNCHANGED;
 
-void getKeyPoints(Mat image, Mat fragment,
-        std::vector<KeyPoint>* keypoints_object, std::vector<KeyPoint>* keypoints_scene,
+void getKeyPoints(Mat image, Mat fragment, std::vector<KeyPoint>* keypoints_image,
+        std::vector<KeyPoint>* keypoints_fragments,
                   std::vector< DMatch>* good_matches) {
     //-- Step 1: Detect the keypoints using SURF Detector
     Ptr<FeatureDetector> detector = ORB::create();
 
-    detector->detect(fragment, *keypoints_object);
-    detector->detect(image, *keypoints_scene);
+    detector->detect(fragment, *keypoints_fragments);
+    detector->detect(image, *keypoints_image);
 
     //-- Step 2: Calculate descriptors (feature vectors)
     Ptr<DescriptorExtractor> extractor = ORB::create();
 
     Mat descriptors_object, descriptors_scene;
 
-    extractor->compute(fragment, *keypoints_object, descriptors_object);
-    extractor->compute(image, *keypoints_scene, descriptors_scene);
+    extractor->compute(fragment, *keypoints_fragments, descriptors_object);
+    extractor->compute(image, *keypoints_image, descriptors_scene);
 
     //-- Step 3: Matching descriptor vectors using FLANN matcher
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
@@ -65,16 +65,16 @@ int main(int argc, char** argv)
         std::cout << " --(!) Error reading images " << std::endl; return -1;
     }
 
-    std::vector<KeyPoint> keypoints_object;
-    std::vector<KeyPoint> keypoints_scene;
+    std::vector<KeyPoint> keypoints_image;
+    std::vector<KeyPoint> keypoints_fragments;
     std::vector< DMatch> good_matches;
 
-    getKeyPoints(image, fragment, &keypoints_object, &keypoints_scene,
+    getKeyPoints(image, fragment, &keypoints_image, &keypoints_fragments,
                  &good_matches);
 
     Mat img_matches;
 
-    drawMatches(fragment, keypoints_object, image, keypoints_scene, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    drawMatches(fragment, keypoints_fragments, image, keypoints_image, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
     //-- Localize the object
     std::vector<Point2f> obj;
@@ -83,8 +83,8 @@ int main(int argc, char** argv)
     for (int i = 0; i < good_matches.size(); i++)
     {
         //-- Get the keypoints from the good matches
-        obj.push_back(keypoints_object[good_matches[i].queryIdx].pt);
-        scene.push_back(keypoints_scene[good_matches[i].trainIdx].pt);
+        obj.push_back(keypoints_fragments[good_matches[i].queryIdx].pt);
+        scene.push_back(keypoints_image[good_matches[i].trainIdx].pt);
     }
 
    
