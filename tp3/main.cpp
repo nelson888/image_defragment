@@ -6,12 +6,12 @@ using namespace cv;
 const int LOADING_TYPE = CV_LOAD_IMAGE_UNCHANGED;
 
 void getKeyPoints(Mat image, Mat fragment, std::vector<KeyPoint>* keypoints_image,
-        std::vector<KeyPoint>* keypoints_fragments,
+        std::vector<KeyPoint>* keypoints_fragment,
                   std::vector< DMatch>* good_matches) {
     //-- Step 1: Detect the keypoints using SURF Detector
     Ptr<FeatureDetector> detector = ORB::create();
 
-    detector->detect(fragment, *keypoints_fragments);
+    detector->detect(fragment, *keypoints_fragment);
     detector->detect(image, *keypoints_image);
 
     //-- Step 2: Calculate descriptors (feature vectors)
@@ -19,7 +19,7 @@ void getKeyPoints(Mat image, Mat fragment, std::vector<KeyPoint>* keypoints_imag
 
     Mat descriptors_object, descriptors_scene;
 
-    extractor->compute(fragment, *keypoints_fragments, descriptors_object);
+    extractor->compute(fragment, *keypoints_fragment, descriptors_object);
     extractor->compute(image, *keypoints_image, descriptors_scene);
 
     //-- Step 3: Matching descriptor vectors using FLANN matcher
@@ -51,10 +51,10 @@ void getKeyPoints(Mat image, Mat fragment, std::vector<KeyPoint>* keypoints_imag
 
     std::cout << "Found " << good_matches->size() << " good matches" << std::endl;
     for (auto match: *good_matches) {
-        std::cout << "Found match with distance: " << match.distance
-        << " from " << (*keypoints_image)[match.queryIdx].pt << "to "
-        << (*keypoints_fragments)[match.queryIdx].pt
-        << " with an angle of " << (*keypoints_fragments)[match.queryIdx].angle << std::endl;
+        std::cout << "Found match with distance " << match.distance
+        << " from " << (*keypoints_image)[match.queryIdx].pt << " to "
+        << (*keypoints_fragment)[match.queryIdx].pt
+        << " with an angle of " << (*keypoints_fragment)[match.queryIdx].angle << std::endl;
     }
 }
 int main(int argc, char** argv)
@@ -70,15 +70,15 @@ int main(int argc, char** argv)
     }
 
     std::vector<KeyPoint> keypoints_image;
-    std::vector<KeyPoint> keypoints_fragments;
+    std::vector<KeyPoint> keypoints_fragment;
     std::vector< DMatch> good_matches;
 
-    getKeyPoints(image, fragment, &keypoints_image, &keypoints_fragments,
+    getKeyPoints(image, fragment, &keypoints_image, &keypoints_fragment,
                  &good_matches);
 
     Mat img_matches;
 
-    drawMatches(fragment, keypoints_fragments, image, keypoints_image, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    drawMatches(fragment, keypoints_fragment, image, keypoints_image, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
     //-- Localize the object
     std::vector<Point2f> obj;
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < good_matches.size(); i++)
     {
         //-- Get the keypoints from the good matches
-        obj.push_back(keypoints_fragments[good_matches[i].queryIdx].pt);
+        obj.push_back(keypoints_fragment[good_matches[i].queryIdx].pt);
         scene.push_back(keypoints_image[good_matches[i].trainIdx].pt);
     }
 
