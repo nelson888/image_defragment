@@ -142,6 +142,10 @@ void getKeyPoints(Mat image, Mat fragment, std::vector<KeyPoint>* keypoints_imag
 int main(int argc, char** argv)
 {
 
+    if (argc < 3) {
+        std::cout << "You have to provide Miachelangelo and then fragment" << std::endl;
+        return -1;
+    }
     Mat image = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
     Mat fragment = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
 

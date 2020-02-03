@@ -73,7 +73,7 @@ double distance(int i1, int j1, int i2, int j2) {
 }
 
 
-constexpr int MAX_RADIUS = 100;
+constexpr int MIN_RADIUS = 4;
 constexpr int BORDER_THRESHOLD = 250; // color threshold
 
 
@@ -96,14 +96,21 @@ void addMaximum(vector<vector<vector<uint>>> *acc, vector<Circle> *maximums, int
   maximums->push_back(c);
 }
 
+bool isSimilar(Circle c1, Circle c2) {
+  if (abs(c1.c - c2.c) <= 2) return true;
+  if (abs(c1.r - c2.r) <= 2) return true;
+  if (abs(c1.rad - c2.rad) <= 2) return true;
+  return false;
+}
 void computeCircles(Mat* img, Mat* dest, int N) {
   std::cout << "Computing circles" << std::endl;
   // initialize accumulator 
   int rows = img->rows;
   int cols = img->cols;
-  int nbRads = 2 * std::min(rows, cols);
+  int nbRads = std::max(rows, cols) / 2;
   vector<vector<vector<uint>>> acc (rows, vector<vector<uint>>(cols, vector<uint>(nbRads, 0)));
 
+  cout << "Initializing acc" << endl;
   for (int i=0; i<rows; i++) {
     for (int j=0; j<cols; j++) {
       for (int k=0; k<nbRads; k++) {
@@ -112,6 +119,7 @@ void computeCircles(Mat* img, Mat* dest, int N) {
     }
   }
 
+    cout << "Computing circles" << endl;
   // compute circles
   for(int y = 0; y < img->rows; y++){
     for (int x = 0; x < img->cols; x++){
@@ -119,6 +127,7 @@ void computeCircles(Mat* img, Mat* dest, int N) {
         for(int j=0; j < rows; j++) {
           for (int i=0; i < cols; i++) {
             double d = distance(i, j, y, x);
+            if (d <= MIN_RADIUS || d >= nbRads) continue;
             acc[j][i][(int)(d)]+= img->at<uchar>(y,x); // magnitude
           }
         }
@@ -132,6 +141,7 @@ void computeCircles(Mat* img, Mat* dest, int N) {
   for (int i=0; i<rows; i++) {
     for (int j=0; j<cols; j++) {
       for (int k=0; k<nbRads; k++) {
+      if (k <= MIN_RADIUS || k >= nbRads) continue;
         addMaximum(&acc, &maximums, i, j, k, rows, cols, nbRads);
       }
     }
@@ -144,6 +154,7 @@ void computeCircles(Mat* img, Mat* dest, int N) {
   
 
   
+  // adding circles an skipping 'similar' ones
   vector<Circle> circles = {};
   for(int i = maximums.size() - N; i < maximums.size(); i++) {  
     circles.push_back(maximums[i]);
